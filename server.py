@@ -11,85 +11,126 @@ CORS(app)
 model = joblib.load("model.pkl")
 features = joblib.load("features.pkl")
 
-# Feature metadata for the frontend form
+# Feature metadata — plain English for teachers and school admins
 FEATURE_META = {
     "2nd_pass_ratio": {
-        "label": "2nd Semester Pass Ratio",
+        "label": "2nd Semester Pass Rate",
+        "description": "Out of all subjects the student attempted in Semester 2, what fraction did they pass?",
+        "help": "Enter a value between 0 and 1. For example, if they passed 4 out of 5 subjects, enter 0.80",
         "type": "range",
         "min": 0, "max": 1, "step": 0.01, "default": 0.8,
-        "group": "academic",
-        "icon": "📊"
+        "group": "semester2",
+        "icon": "chart"
     },
     "1st_pass_ratio": {
-        "label": "1st Semester Pass Ratio",
+        "label": "1st Semester Pass Rate",
+        "description": "Out of all subjects the student attempted in Semester 1, what fraction did they pass?",
+        "help": "Enter a value between 0 and 1. For example, if they passed 3 out of 5 subjects, enter 0.60",
         "type": "range",
         "min": 0, "max": 1, "step": 0.01, "default": 0.8,
-        "group": "academic",
-        "icon": "📊"
+        "group": "semester1",
+        "icon": "chart"
     },
     "total_approved": {
-        "label": "Total Approved Units",
+        "label": "Total Subjects Passed (All Semesters)",
+        "description": "How many subjects has the student successfully completed in total across all semesters so far?",
+        "help": "A whole number, e.g. 12",
         "type": "number",
         "min": 0, "max": 50, "step": 1, "default": 10,
-        "group": "academic",
-        "icon": "✅"
+        "group": "overall",
+        "icon": "check"
     },
     "Curricular units 2nd sem (approved)": {
-        "label": "2nd Sem Approved Units",
+        "label": "Subjects Passed in Semester 2",
+        "description": "How many individual subjects did the student pass in their 2nd semester?",
+        "help": "A whole number, e.g. 5",
         "type": "number",
         "min": 0, "max": 30, "step": 1, "default": 5,
-        "group": "academic",
-        "icon": "📝"
+        "group": "semester2",
+        "icon": "book"
     },
     "Curricular units 1st sem (approved)": {
-        "label": "1st Sem Approved Units",
+        "label": "Subjects Passed in Semester 1",
+        "description": "How many individual subjects did the student pass in their 1st semester?",
+        "help": "A whole number, e.g. 5",
         "type": "number",
         "min": 0, "max": 30, "step": 1, "default": 5,
-        "group": "academic",
-        "icon": "📝"
+        "group": "semester1",
+        "icon": "book"
     },
     "Curricular units 2nd sem (grade)": {
-        "label": "2nd Semester Grade",
+        "label": "Average Grade in Semester 2",
+        "description": "What was the student's average grade across all 2nd semester subjects? (Scale: 0 to 20)",
+        "help": "A number between 0 and 20. 10 is the minimum passing grade, 14+ is good",
         "type": "number",
         "min": 0, "max": 20, "step": 0.1, "default": 12.0,
-        "group": "grades",
-        "icon": "🎓"
+        "group": "semester2",
+        "icon": "star"
     },
     "Curricular units 1st sem (grade)": {
-        "label": "1st Semester Grade",
+        "label": "Average Grade in Semester 1",
+        "description": "What was the student's average grade across all 1st semester subjects? (Scale: 0 to 20)",
+        "help": "A number between 0 and 20. 10 is the minimum passing grade, 14+ is good",
         "type": "number",
         "min": 0, "max": 20, "step": 0.1, "default": 12.0,
-        "group": "grades",
-        "icon": "🎓"
+        "group": "semester1",
+        "icon": "star"
     },
     "Tuition fees up to date": {
-        "label": "Tuition Fees Up to Date",
+        "label": "Are Tuition Fees Paid?",
+        "description": "Has the student paid all their tuition fees on time?",
+        "help": "Toggle ON if fees are fully paid, OFF if there are outstanding dues",
         "type": "toggle",
         "default": 1,
-        "group": "financial",
-        "icon": "💰"
+        "group": "personal",
+        "icon": "wallet"
     },
     "Admission grade": {
-        "label": "Admission Grade",
+        "label": "Admission Score",
+        "description": "What score did the student receive when they were admitted to the institution?",
+        "help": "A number between 0 and 200. Average is around 120",
         "type": "number",
         "min": 0, "max": 200, "step": 0.1, "default": 120.0,
-        "group": "enrollment",
-        "icon": "🏫"
+        "group": "personal",
+        "icon": "award"
     },
     "Age at enrollment": {
-        "label": "Age at Enrollment",
+        "label": "Age When Student Enrolled",
+        "description": "How old was the student (in years) when they first enrolled in the program?",
+        "help": "Typical range: 17-25 years",
         "type": "number",
         "min": 15, "max": 80, "step": 1, "default": 20,
-        "group": "enrollment",
-        "icon": "🧑"
+        "group": "personal",
+        "icon": "user"
+    },
+}
+
+GROUP_INFO = {
+    "semester1": {
+        "title": "Semester 1 Performance",
+        "subtitle": "How did the student perform in their first semester?",
+        "icon": "semester1"
+    },
+    "semester2": {
+        "title": "Semester 2 Performance",
+        "subtitle": "How did the student perform in their second semester?",
+        "icon": "semester2"
+    },
+    "overall": {
+        "title": "Overall Academic Progress",
+        "subtitle": "The student's cumulative academic record",
+        "icon": "overall"
+    },
+    "personal": {
+        "title": "Student Background",
+        "subtitle": "Personal and financial information about the student",
+        "icon": "personal"
     },
 }
 
 
 def get_risk_factors(input_data):
-    """Analyze input data and return human-readable risk factors."""
     factors = []
-
     pr1 = input_data.get("1st_pass_ratio", 1)
     pr2 = input_data.get("2nd_pass_ratio", 1)
     g1 = input_data.get("Curricular units 1st sem (grade)", 20)
@@ -101,154 +142,72 @@ def get_risk_factors(input_data):
     age = input_data.get("Age at enrollment", 20)
 
     if pr1 < 0.5:
-        factors.append({
-            "text": "Low 1st semester pass ratio",
-            "severity": "high",
-            "detail": f"Current: {pr1:.0%} — below the 50% threshold"
-        })
+        factors.append({"text": "Student is failing more than half their Semester 1 subjects", "severity": "high",
+                         "detail": f"Only passing {pr1:.0%} of attempted subjects"})
     elif pr1 < 0.7:
-        factors.append({
-            "text": "Below-average 1st semester pass ratio",
-            "severity": "medium",
-            "detail": f"Current: {pr1:.0%} — room for improvement"
-        })
+        factors.append({"text": "Semester 1 pass rate is below average", "severity": "medium",
+                         "detail": f"Passing {pr1:.0%} of attempted subjects"})
 
     if pr2 < 0.5:
-        factors.append({
-            "text": "Low 2nd semester pass ratio",
-            "severity": "high",
-            "detail": f"Current: {pr2:.0%} — below the 50% threshold"
-        })
+        factors.append({"text": "Student is failing more than half their Semester 2 subjects", "severity": "high",
+                         "detail": f"Only passing {pr2:.0%} of attempted subjects"})
     elif pr2 < 0.7:
-        factors.append({
-            "text": "Below-average 2nd semester pass ratio",
-            "severity": "medium",
-            "detail": f"Current: {pr2:.0%} — room for improvement"
-        })
+        factors.append({"text": "Semester 2 pass rate is below average", "severity": "medium",
+                         "detail": f"Passing {pr2:.0%} of attempted subjects"})
 
     if g1 < 10:
-        factors.append({
-            "text": "Low 1st semester grades",
-            "severity": "high",
-            "detail": f"Grade: {g1:.1f}/20"
-        })
+        factors.append({"text": "Semester 1 grades are below the passing threshold", "severity": "high",
+                         "detail": f"Average grade: {g1:.1f} out of 20 (passing is 10)"})
     if g2 < 10:
-        factors.append({
-            "text": "Low 2nd semester grades",
-            "severity": "high",
-            "detail": f"Grade: {g2:.1f}/20"
-        })
+        factors.append({"text": "Semester 2 grades are below the passing threshold", "severity": "high",
+                         "detail": f"Average grade: {g2:.1f} out of 20 (passing is 10)"})
 
     if a1 < 3:
-        factors.append({
-            "text": "Very few 1st semester approvals",
-            "severity": "high",
-            "detail": f"Only {a1} units approved"
-        })
+        factors.append({"text": "Very few subjects completed in Semester 1", "severity": "high",
+                         "detail": f"Only {a1} subjects passed"})
     if a2 < 3:
-        factors.append({
-            "text": "Very few 2nd semester approvals",
-            "severity": "high",
-            "detail": f"Only {a2} units approved"
-        })
+        factors.append({"text": "Very few subjects completed in Semester 2", "severity": "high",
+                         "detail": f"Only {a2} subjects passed"})
 
     if total_approved < 5:
-        factors.append({
-            "text": "Low total approved units",
-            "severity": "high",
-            "detail": f"Only {total_approved} total units approved"
-        })
+        factors.append({"text": "Overall subject completion is very low", "severity": "high",
+                         "detail": f"Only {total_approved} subjects passed in total"})
 
     if tuition == 0:
-        factors.append({
-            "text": "Tuition fees not up to date",
-            "severity": "medium",
-            "detail": "Outstanding financial obligations detected"
-        })
+        factors.append({"text": "Student has unpaid tuition fees", "severity": "medium",
+                         "detail": "Outstanding financial obligations may indicate personal difficulties"})
 
     if age > 40:
-        factors.append({
-            "text": "Mature student — may need flexible scheduling",
-            "severity": "low",
-            "detail": f"Age at enrollment: {age}"
-        })
+        factors.append({"text": "Mature student may need flexible scheduling", "severity": "low",
+                         "detail": f"Student was {age} years old at enrollment"})
 
     if not factors:
-        factors.append({
-            "text": "No significant risk factors detected",
-            "severity": "none",
-            "detail": "Student profile appears healthy"
-        })
-
+        factors.append({"text": "No significant risk factors detected", "severity": "none",
+                         "detail": "This student's profile looks healthy overall"})
     return factors
 
 
 def get_recommendations(prob):
-    """Return actionable recommendations based on risk probability."""
     recs = []
     if prob < 0.3:
-        recs.append({
-            "text": "Continue regular academic monitoring",
-            "icon": "✅",
-            "priority": "routine"
-        })
-        recs.append({
-            "text": "Encourage participation in extracurricular activities",
-            "icon": "🎯",
-            "priority": "routine"
-        })
+        recs.append({"text": "Continue regular academic monitoring", "icon": "clipboard", "priority": "routine"})
+        recs.append({"text": "Encourage participation in extracurricular activities", "icon": "sparkle", "priority": "routine"})
     elif prob < 0.5:
-        recs.append({
-            "text": "Schedule periodic check-ins with academic advisor",
-            "icon": "📅",
-            "priority": "moderate"
-        })
-        recs.append({
-            "text": "Monitor upcoming semester enrollment closely",
-            "icon": "👁️",
-            "priority": "moderate"
-        })
+        recs.append({"text": "Schedule a check-in meeting with the student", "icon": "calendar", "priority": "moderate"})
+        recs.append({"text": "Monitor next semester's enrollment closely", "icon": "eye", "priority": "moderate"})
     elif prob < 0.7:
-        recs.append({
-            "text": "Provide targeted academic counseling and support",
-            "icon": "🎓",
-            "priority": "important"
-        })
-        recs.append({
-            "text": "Investigate potential financial difficulties",
-            "icon": "💰",
-            "priority": "important"
-        })
-        recs.append({
-            "text": "Connect student with peer tutoring programs",
-            "icon": "🤝",
-            "priority": "important"
-        })
+        recs.append({"text": "Assign an academic counselor to the student", "icon": "users", "priority": "important"})
+        recs.append({"text": "Check if the student is facing financial difficulties", "icon": "wallet", "priority": "important"})
+        recs.append({"text": "Connect the student with a peer tutoring program", "icon": "handshake", "priority": "important"})
     else:
-        recs.append({
-            "text": "Immediate intervention required",
-            "icon": "🚨",
-            "priority": "critical"
-        })
-        recs.append({
-            "text": "Schedule urgent meeting with student and academic advisor",
-            "icon": "📋",
-            "priority": "critical"
-        })
-        recs.append({
-            "text": "Offer intensive tutoring and mentorship",
-            "icon": "📚",
-            "priority": "critical"
-        })
-        recs.append({
-            "text": "Review and address any financial or personal barriers",
-            "icon": "🛡️",
-            "priority": "critical"
-        })
+        recs.append({"text": "Immediate intervention needed - this student is at high risk", "icon": "alert", "priority": "critical"})
+        recs.append({"text": "Arrange an urgent meeting with the student and their advisor", "icon": "calendar", "priority": "critical"})
+        recs.append({"text": "Provide intensive academic tutoring and mentorship", "icon": "book", "priority": "critical"})
+        recs.append({"text": "Investigate and address any personal or financial barriers", "icon": "shield", "priority": "critical"})
     return recs
 
 
-# ─── Routes ──────────────────────────────────────────────────────────────────
+# ─── Routes ──────────────────────────────────────────────────────────
 
 @app.route('/')
 def serve_index():
@@ -257,28 +216,22 @@ def serve_index():
 
 @app.route('/api/features', methods=['GET'])
 def get_features():
-    """Return ordered feature list with metadata for the frontend form."""
     ordered = []
     for f in features:
         meta = FEATURE_META.get(f, {
-            "label": f,
-            "type": "number",
-            "min": 0, "max": 200, "step": 1, "default": 0,
-            "group": "other",
-            "icon": "📌"
+            "label": f, "description": "", "help": "",
+            "type": "number", "min": 0, "max": 200, "step": 1, "default": 0,
+            "group": "other", "icon": "circle"
         })
         ordered.append({"name": f, **meta})
-    return jsonify(ordered)
+    return jsonify({"features": ordered, "groups": GROUP_INFO})
 
 
 @app.route('/api/predict', methods=['POST'])
 def predict():
-    """Accept feature values, return prediction + analysis."""
     data = request.get_json()
-
     if not data:
         return jsonify({"error": "No data provided"}), 400
-
     try:
         values = [float(data.get(f, 0)) for f in features]
         arr = np.array([values])
@@ -298,7 +251,6 @@ def predict():
             "riskFactors": get_risk_factors(data),
             "recommendations": get_recommendations(prob),
         })
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
