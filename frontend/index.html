@@ -12,11 +12,16 @@
 </head>
 <body>
 
+<!-- Print Watermark -->
+<div class="watermark">CONFIDENTIAL — Academic Risk Report</div>
+
+<!-- Toast Container -->
+<div id="toast-container" class="toast-container"></div>
+
 <!-- ─── Three.js Neural Canvas (z-index: 0, pointer-events: none) ─── -->
 <canvas id="neural-canvas"></canvas>
 
 <!-- ─── Top Status Bar ───────────────────────────────────────────── -->
-<!-- [STRUCTURE: New — no IDs or classes used by app.js] -->
 <div class="topbar">
   <div class="topbar__inner">
     <span>Academic Early-Warning System &nbsp;·&nbsp; Random Forest Classifier &nbsp;·&nbsp; v2.0</span>
@@ -28,8 +33,8 @@
 </div>
 
 <!-- ─── Header / Navbar ──────────────────────────────────────────── -->
-<!-- [STRUCTURE: ID="header" preserved] -->
 <header class="header" id="header">
+  <div id="form-progress-bar" class="form-progress-bar"></div>
   <div class="header__inner">
     <div class="header__brand">
       <div class="header__logo">
@@ -43,10 +48,21 @@
       </div>
     </div>
     <div class="header__badges">
+      <!-- History Dropdown Toggle -->
+      <div class="pill pill--history" id="btn-history">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Recent
+      </div>
+      <!-- Dropdown Panel -->
+      <div class="history-dropdown" id="history-dropdown">
+        <div class="history-dropdown__header">Session History</div>
+        <div class="history-dropdown__list" id="history-list">
+          <div style="padding:16px; font-size:12px; color:var(--text-4); text-align:center;">No recent analyses</div>
+        </div>
+      </div>
+      
       <div class="pill pill--model">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2L13.09 8.26L19 9.27L14 14.14L15.18 21.02L12 17.77L8.82 21.02L10 14.14L5 9.27L10.91 8.26L12 2Z"/>
-        </svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3"/></svg>
         Random Forest
       </div>
       <div class="pill pill--live">
@@ -58,15 +74,12 @@
 </header>
 
 <!-- ─── Hero Section ─────────────────────────────────────────────── -->
-<!-- [STRUCTURE: ID="hero" preserved; aurora blobs are decorative only] -->
 <section class="hero" id="hero">
-  <!-- Aurora background blobs (decorative, pure CSS) -->
   <div class="aurora-wrap">
     <div class="aurora-blob"></div>
     <div class="aurora-blob"></div>
     <div class="aurora-blob"></div>
   </div>
-
   <div class="hero__inner">
     <div class="hero__text">
       <div class="hero__eyebrow">
@@ -83,8 +96,6 @@
         score and prioritized intervention recommendations.
       </p>
     </div>
-
-    <!-- [STRUCTURE: Stat cards — decorative; JS targets by id="stat-*" for count-up] -->
     <div class="hero__stats">
       <div class="stat-item">
         <div class="stat-item__num" id="stat-accuracy" data-target="88" data-suffix="%">0%</div>
@@ -104,12 +115,8 @@
 
 <!-- ─── Page Body ─────────────────────────────────────────────────── -->
 <div class="page-body">
-
   <!-- ══ FORM SECTION ══════════════════════════════════════════════ -->
-  <!-- [STRUCTURE: ID="section-form" preserved; JS toggles display] -->
   <section class="section section--form" id="section-form">
-
-    <!-- Breadcrumb (decorative) -->
     <div class="breadcrumb">
       <div class="breadcrumb-item active">Profile Input</div>
       <div class="breadcrumb-sep"></div>
@@ -117,47 +124,63 @@
       <div class="breadcrumb-sep"></div>
       <div class="breadcrumb-item">Results</div>
     </div>
-
     <div class="section__eyebrow">Step 1 of 1</div>
     <h2 class="section__heading">Student Academic Profile</h2>
-    <p class="section__sub">Complete all fields for highest prediction confidence.</p>
+    <p class="section__sub">Complete all fields for maximum prediction accuracy.</p>
 
     <!-- Glass form panel -->
     <div class="glass-panel">
-      <div class="glass-panel__header">
+      <div class="glass-panel__header" style="position:relative;">
         <div class="glass-panel__title">
-          <!-- Users icon -->
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
           Student Information Form
         </div>
-        <!-- [ID="field-count" preserved — JS writes field count here] -->
-        <span class="glass-panel__meta" id="field-count">Loading…</span>
+        <div id="progress-label" class="progress-label-wrap">0 / 10 fields completed</div>
       </div>
 
-      <!-- [ID="predict-form" preserved — JS attaches submit handler here] -->
       <form id="predict-form" autocomplete="off">
-        <!-- [ID="form-groups" preserved — JS injects form groups here] -->
+        <!-- Student Personal Information -->
+        <div class="form-group" style="animation: slideUp 0.1s var(--ease-out-expo) both;">
+          <div class="form-group__header">
+            <div class="form-group__icon-wrap">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div>
+              <div class="form-group__title">Student Personal Information</div>
+              <div class="form-group__subtitle">Basic identification details for report generation. <span style="color: var(--text-muted); font-size: 11px;">This information is used for report identification only and does not influence the risk prediction model.</span></div>
+            </div>
+          </div>
+          <div class="form-group__fields">
+            <div class="field">
+              <label class="field__label" for="student_name">Student Full Name</label>
+              <input type="text" class="field__input form-tracker" id="student_name" placeholder="e.g. Rahul Sharma" required>
+            </div>
+            <div class="field">
+              <label class="field__label" for="student_roll">Roll Number</label>
+              <input type="text" class="field__input form-tracker" id="student_roll" placeholder="e.g. 2021CS101" required pattern="[A-Za-z0-9]+" title="Alphanumeric only">
+            </div>
+            <div class="field">
+              <label class="field__label" for="student_branch">Branch / Department</label>
+              <input type="text" class="field__input form-tracker" id="student_branch" placeholder="e.g. Computer Science & Engineering" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- JS injects form groups here -->
         <div id="form-groups" class="form-groups"></div>
 
         <div class="glass-panel__footer">
-          <!-- [ID="btn-reset" preserved] -->
           <button type="button" id="btn-reset" class="btn btn--ghost">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-              <polyline points="1 4 1 10 7 10"/>
-              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
             </svg>
-            Reset to Defaults
+            Clear Form
           </button>
-          <!-- [ID="btn-predict" preserved] -->
           <button type="submit" id="btn-predict" class="btn btn--primary">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-              <circle cx="11" cy="11" r="8"/>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             Run Risk Analysis
           </button>
@@ -167,26 +190,54 @@
   </section>
 
   <!-- ══ RESULTS SECTION ═══════════════════════════════════════════ -->
-  <!-- [STRUCTURE: ID="section-results" preserved; JS adds class "visible"] -->
   <section class="section section--results" id="section-results">
-
-    <!-- Results breadcrumb -->
     <div class="breadcrumb">
       <div class="breadcrumb-item">Profile Input</div>
       <div class="breadcrumb-sep"></div>
       <div class="breadcrumb-item">Analysis</div>
       <div class="breadcrumb-sep"></div>
-      <div class="breadcrumb-item active">Results</div>
+      <div class="breadcrumb-item active" style="color:var(--text-1);">Results</div>
+    </div>
+    
+    <div class="urgent-banner" id="urgent-banner">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      URGENT: This student requires immediate faculty intervention
     </div>
 
-    <div class="section__eyebrow">Analysis Complete</div>
+    <div class="section__eyebrow" id="result-status-brow">Analysis Complete</div>
     <h2 class="section__heading">Risk Assessment Report</h2>
-    <p class="section__sub">Generated by Random Forest Classifier · <span id="result-timestamp"></span></p>
+    <p class="section__sub" id="report-subtitle">Generated by Random Forest Classifier</p>
 
-    <!-- Top row: Gauge + Classification -->
+    <!-- Student Identity Banner -->
+    <div class="student-id-banner" id="student-id-banner">
+      <div class="student-id-banner__badge">STUDENT PROFILE</div>
+      <div class="student-id-item">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <div>
+          <div class="student-id-val" id="disp_student_name"></div>
+          <div class="student-id-lbl">STUDENT NAME</div>
+        </div>
+      </div>
+      <div class="student-id-divider"></div>
+      <div class="student-id-item">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M6.5 2H20v15H6.5A2.5 2.5 0 0 0 4 19.5"/></svg>
+        <div>
+          <div class="student-id-val" id="disp_student_roll"></div>
+          <div class="student-id-lbl">ROLL NUMBER</div>
+        </div>
+      </div>
+      <div class="student-id-divider"></div>
+      <div class="student-id-item">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <div>
+          <div class="student-id-val" id="disp_student_branch"></div>
+          <div class="student-id-lbl">BRANCH</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top row: Gauge + Intervention -->
     <div class="results-top">
-
-      <!-- [ID="card-gauge" preserved] -->
       <div class="card card--gauge" id="card-gauge">
         <div class="card__header">
           <svg class="card__header-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -195,191 +246,103 @@
           <span class="card__title">Dropout Probability</span>
         </div>
         <div class="gauge-container">
-          <!-- [ID="gauge-svg" preserved] -->
           <svg class="gauge" viewBox="0 0 240 150" id="gauge-svg" overflow="visible">
             <defs>
-              <!-- Gradient for the gauge arc -->
               <linearGradient id="gauge-grad" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%"   stop-color="#10B981"/>
                 <stop offset="45%"  stop-color="#F59E0B"/>
                 <stop offset="100%" stop-color="#EF4444"/>
               </linearGradient>
-              <!-- Glow filter -->
-              <filter id="glow-filter" x="-30%" y="-30%" width="160%" height="160%">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
-                <feMerge>
-                  <feMergeNode in="blur"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
             </defs>
-
-            <!-- Track (background arc) -->
-            <path d="M 28 122 A 92 92 0 0 1 212 122"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.06)"
-                  stroke-width="16"
-                  stroke-linecap="round"/>
-
-            <!-- Tick marks at 0, 25, 50, 75, 100 -->
-            <g fill="rgba(255,255,255,0.2)" font-family="JetBrains Mono,monospace" font-size="9" text-anchor="middle">
+            <path d="M 28 122 A 92 92 0 0 1 212 122" fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="16" stroke-linecap="round"/>
+            <g fill="rgba(0,0,0,0.3)" font-family="JetBrains Mono,monospace" font-size="9" text-anchor="middle">
               <text x="24"  y="138">0</text>
               <text x="68"  y="68">25</text>
               <text x="120" y="36">50</text>
               <text x="172" y="68">75</text>
               <text x="216" y="138">100</text>
             </g>
-
-            <!-- [ID="gauge-fill" preserved — JS animates stroke-dashoffset] -->
-            <path id="gauge-fill"
-                  d="M 28 122 A 92 92 0 0 1 212 122"
-                  fill="none"
-                  stroke="url(#gauge-grad)"
-                  stroke-width="16"
-                  stroke-linecap="round"
-                  stroke-dasharray="289"
-                  stroke-dashoffset="289"
-                  filter="url(#glow-filter)"/>
-
-            <!-- Hub dot -->
-            <circle cx="120" cy="122" r="8" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
-            <circle cx="120" cy="122" r="3.5" fill="white"/>
-
-            <!-- [ID="gauge-needle" preserved — JS sets transform="rotate(deg, 120, 122)"] -->
-            <line id="gauge-needle"
-                  x1="120" y1="122"
-                  x2="120" y2="42"
-                  stroke="white"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  transform="rotate(-90, 120, 122)"
-                  style="filter: drop-shadow(0 0 6px rgba(255,255,255,0.6));"/>
+            <path id="gauge-fill" d="M 28 122 A 92 92 0 0 1 212 122" fill="none" stroke="url(#gauge-grad)" stroke-width="16" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289"/>
+            <circle cx="120" cy="122" r="8" fill="rgba(0,0,0,0.05)" stroke="var(--blue)" stroke-width="1"/>
+            <circle cx="120" cy="122" r="3.5" fill="var(--blue)"/>
+            <line id="gauge-needle" x1="120" y1="122" x2="120" y2="42" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round" transform="rotate(-90, 120, 122)"/>
           </svg>
-
-          <!-- [ID="gauge-value" preserved — JS writes probability text] -->
-          <div class="gauge-value gauge-value--low" id="gauge-value">0.0%</div>
-          <!-- [ID="gauge-label" preserved] -->
+          <div class="gauge-value" id="gauge-value">0.0%</div>
           <div class="gauge-label" id="gauge-label">Analyzing…</div>
+          <div class="confidence-indicator" id="confidence-indicator" title="Confidence is based on completeness of input data provided">
+             Model Confidence: High
+          </div>
         </div>
       </div>
+      
+      <!-- Smart Intervention Container -->
+      <div id="smart-intervention-container"></div>
+    </div>
 
-      <!-- [ID="card-level" preserved] -->
-      <div class="card card--level" id="card-level">
+    <!-- Secondary Row: Features & Trends -->
+    <div class="split-cards">
+      <div class="card card--factors">
         <div class="card__header">
-          <svg class="card__header-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <svg class="card__header-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          <span class="card__title">Feature Contribution Analysis</span>
+          <span class="card__subtitle" style="margin-left:auto;">Factors most influencing this prediction</span>
+        </div>
+        <div style="padding: 16px 24px;">
+          <div id="feature-bars-container" class="feature-bars"></div>
+          <p style="font-size:11px; color:var(--text-muted); margin-top:16px; text-align:center;">Based on Random Forest feature importance scores</p>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card__header">
+          <svg class="card__header-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span class="card__title">Academic Trajectory</span>
+        </div>
+        <div class="spark-canvas-wrap">
+          <svg width="100%" height="80" viewBox="0 0 200 80" id="sparkline-svg" style="overflow:visible;">
+            <polyline id="sparkline-path" fill="none" stroke="var(--blue)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <g id="sparkline-dots"></g>
           </svg>
-          <span class="card__title">Risk Classification</span>
-        </div>
-        <div class="level-content">
-          <!-- [ID="risk-badge" preserved — JS sets className and child text] -->
-          <div class="risk-tag" id="risk-badge">
-            <span id="risk-icon"></span>
-            <span id="risk-text">--</span>
+          <div style="display:flex; justify-content:space-between; width:100%; font-size:10px; color:var(--text-muted); padding:0 10px; margin-top:10px;">
+            <span>Sem 1</span><span>Sem 2</span><span>Current</span><span>Proj.</span>
           </div>
-          <!-- [ID="risk-summary" preserved] -->
-          <p class="risk-summary" id="risk-summary"></p>
-
-          <!-- Probability bar -->
-          <div class="prob-bar-wrap">
-            <div class="prob-bar-header">
-              <span>Dropout Probability</span>
-              <!-- [ID="prob-pct-label" preserved] -->
-              <span id="prob-pct-label">--</span>
-            </div>
-            <div class="prob-bar-track">
-              <!-- [ID="prob-bar" preserved — JS sets width and className] -->
-              <div class="prob-bar-fill" id="prob-bar"></div>
-            </div>
-          </div>
-
-          <!-- Meta stats -->
-          <div class="score-meta">
-            <div class="score-meta-item">
-              <!-- [ID="meta-score" preserved] -->
-              <div class="score-meta-item__val" id="meta-score">--</div>
-              <div class="score-meta-item__lbl">Probability</div>
-            </div>
-            <div class="score-meta-item">
-              <!-- [ID="meta-threshold" preserved] -->
-              <div class="score-meta-item__val" id="meta-threshold">40%</div>
-              <div class="score-meta-item__lbl">Risk Threshold</div>
-            </div>
-            <div class="score-meta-item">
-              <div class="score-meta-item__val">RF</div>
-              <div class="score-meta-item__lbl">Algorithm</div>
-            </div>
-          </div>
+          <div id="spark-status-text" class="spark-status"></div>
         </div>
       </div>
     </div>
 
-    <!-- Risk Factors Card -->
-    <!-- [ID="card-factors" preserved] -->
-    <div class="card card--full" id="card-factors">
-      <div class="card__header">
-        <svg class="card__header-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        <span class="card__title">Key Risk Indicators</span>
-        <span class="card__subtitle">Factors contributing to the assessment</span>
-      </div>
-      <!-- [ID="factors-list" preserved — JS injects .factor-item children] -->
-      <div id="factors-list" class="factors-list"></div>
+    <div style="display:flex; justify-content:flex-end; gap:16px; margin-top:32px;">
+      <button type="button" id="btn-back" class="btn btn--ghost">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Analyze Another Student
+      </button>
+      <button type="button" id="btn-download" class="btn btn--ghost" style="border-color:var(--blue); color:var(--blue); font-weight:600;" onclick="window.print()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download PDF Report
+      </button>
     </div>
-
-    <!-- Recommendations Card -->
-    <!-- [ID="card-recs" preserved] -->
-    <div class="card card--full" id="card-recs">
-      <div class="card__header">
-        <svg class="card__header-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <path d="M9 18l6-6-6-6"/>
-        </svg>
-        <span class="card__title">Recommended Interventions</span>
-        <span class="card__subtitle">Prioritized action plan for educators</span>
-      </div>
-      <!-- [ID="recs-list" preserved — JS injects .rec-item children] -->
-      <div id="recs-list" class="recs-list"></div>
-    </div>
-
-    <!-- [ID="btn-back" preserved — JS attaches click handler] -->
-    <button type="button" id="btn-back" class="btn btn--back">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-        <line x1="19" y1="12" x2="5" y2="12"/>
-        <polyline points="12 19 5 12 12 5"/>
-      </svg>
-      Analyze Another Student
-    </button>
   </section>
 
-</div><!-- /page-body -->
+</div>
 
-<!-- ─── Loading Overlay ───────────────────────────────────────── -->
-<!-- [STRUCTURE: New — JS targets by class "analysis-loader" + "active"] -->
 <div class="analysis-loader" id="analysis-loader">
   <div class="loader-ring-wrap">
     <div class="loader-ring"></div>
     <div class="loader-icon">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      </svg>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     </div>
   </div>
   <div class="loader-text">Analyzing Academic Profile…</div>
   <div class="loader-sub">Running Random Forest inference on 10 features</div>
 </div>
 
-<!-- ─── Footer ───────────────────────────────────────────────── -->
 <footer class="footer">
-  <div class="footer__inner">
-    <p>Student Risk Monitoring System &nbsp;·&nbsp; Powered by Machine Learning</p>
+  <div class="footer__inner" style="max-width:1320px; margin:0 auto; padding:32px; display:flex; justify-content:space-between; color:var(--text-4); font-size:13px; border-top:1px solid var(--border-dim); margin-top:20px;">
+    <p>Generated by Student Risk Monitor v2.0 — For Faculty Use Only</p>
     <span>Academic Decision Support Tool</span>
   </div>
 </footer>
 
-<!-- Three.js from CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
 <script src="app.js"></script>
 </body>
