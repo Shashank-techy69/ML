@@ -244,42 +244,109 @@ function initHistory() {
   document.addEventListener('click', (e) => {
     if(!drop.contains(e.target) && !btn.contains(e.target)) drop.classList.remove('active');
   });
+  const clearBtn = document.getElementById('btn-clear-history');
+  if(clearBtn) {
+    clearBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if(confirm('Clear all analysis history?')) {
+        localStorage.removeItem('riskHistory');
+        renderHistoryList();
+        showToast('History cleared');
+      }
+    });
+  }
   renderHistoryList();
 }
 
-function saveHistory(data, info) {
-  let hist = JSON.parse(sessionStorage.getItem('riskHistory') || '[]');
+function saveHistory(data, info, payload) {
+  let hist = JSON.parse(localStorage.getItem('riskHistory') || '[]');
+  
+  // Add new entry
   hist.unshift({
-    name: info.name, roll: info.roll, riskScore: data.percentage, 
-    riskLevel: data.riskLevel, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'})
+    info: info,
+    data: data,
+    payload: payload,
+    time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}),
+    date: new Date().toLocaleDateString('en-IN', {day:'2-digit', month:'short'})
   });
-  if(hist.length > 5) hist = hist.slice(0, 5);
-  sessionStorage.setItem('riskHistory', JSON.stringify(hist));
+
+  // Keep last 20 entries
+  if(hist.length > 20) hist = hist.slice(0, 20);
+  
+  localStorage.setItem('riskHistory', JSON.stringify(hist));
   renderHistoryList();
 }
 
 function renderHistoryList() {
   const list = document.getElementById('history-list');
   if(!list) return;
-  const hist = JSON.parse(sessionStorage.getItem('riskHistory') || '[]');
+  
+  const hist = JSON.parse(localStorage.getItem('riskHistory') || '[]');
+  
   if(hist.length === 0) {
     list.innerHTML = `<div style="padding:16px; font-size:12px; color:var(--text-4); text-align:center;">No recent analyses</div>`;
     return;
   }
-  list.innerHTML = hist.map(h => {
-    const col = h.riskLevel==='Low'?'var(--green)':h.riskLevel==='Medium'?'var(--amber)':'var(--red)';
-    return `
-      <div class="history-item">
-        <div class="history-item__icon" style="background:${col};"></div>
-        <div class="history-item__details">
-          <div class="history-item__name">${h.name}</div>
-          <div class="history-item__roll">${h.roll} &bull; ${h.time}</div>
+
+  list.innerHTML = hist.map((h, idx) => {
+    try {
+      const rL = (h.data && h.data.riskLevel) ? h.data.riskLevel.toLowerCase() : 'unknown';
+      const col = rL === 'low' ? 'var(--green)' : rL === 'high' ? 'var(--amber)' : rL === 'critical' ? 'var(--red)' : 'var(--text-muted)';
+      const name = (h.info && h.info.name) ? h.info.name : 'Unknown';
+      const roll = (h.info && h.info.roll) ? h.info.roll : '-';
+      const score = (h.data && h.data.percentage) ? h.data.percentage.toFixed(1) : '0.0';
+      
+      return `
+        <div class="history-item" onclick="restoreHistory(${idx})">
+          <div class="history-item__icon" style="background:${col};"></div>
+          <div class="history-item__details">
+            <div class="history-item__name">${name}</div>
+            <div class="history-item__roll">${roll} &bull; ${h.date || ''} ${h.time || ''}</div>
+          </div>
+          <div class="history-item__score" style="color:${col};">${score}%</div>
         </div>
-        <div class="history-item__score" style="color:${col};">${h.riskScore.toFixed(1)}%</div>
-      </div>
-    `;
+      `;
+    } catch(e) {
+      console.error('History item render error:', e);
+      return '';
+    }
   }).join('');
 }
+
+window.restoreHistory = function(idx) {
+  const hist = JSON.parse(localStorage.getItem('riskHistory') || '[]');
+  const entry = hist[idx];
+  if(!entry) return;
+  
+  // Close dropdown
+  const drop = document.getElementById('history-dropdown');
+  if(drop) drop.classList.remove('active');
+
+  // Fill form fields for potential editing
+  const sName = document.getElementById('student_name');
+  const sRoll = document.getElementById('student_roll');
+  const sBranch = document.getElementById('student_branch');
+  if (sName) sName.value = entry.info.name;
+  if (sRoll) sRoll.value = entry.info.roll;
+  if (sBranch) sBranch.value = entry.info.branch;
+
+  Object.keys(entry.payload).forEach(key => {
+    const el = document.querySelector(`[data-feature="${key}"]`);
+    if (!el) return;
+    if (el.type === 'checkbox') {
+      el.checked = entry.payload[key] === 1;
+    } else {
+      el.value = entry.payload[key];
+    }
+    // Trigger events to update tooltips/toggles
+    el.dispatchEvent(new Event('input'));
+    el.dispatchEvent(new Event('change'));
+  });
+
+  // Show results view with stored data
+  showResults(entry.data, entry.payload, entry.info);
+  showToast(`Restored analysis for ${entry.info.name}`);
+};
 
 /* ═══════════════════════════════════════════════════════════════════
    TOAST NOTIFICATION
@@ -327,9 +394,14 @@ async function handlePredict(e) {
     if (loader) loader.classList.remove('active');
     
     // Add fake risk factors for UI if missing to power the bars
-    if(!data.riskFactors || data.riskFactors.length===0) data.riskFactors = [{name:"CGPA", text:"Low CGPA", severity:"high", val:0.8}];
+    const studentInfo = {
+      name: document.getElementById('student_name').value || 'Unknown Student',
+      roll: document.getElementById('student_roll').value || '-',
+      branch: document.getElementById('student_branch').value || '-'
+    };
     
-    showResults(data, payload);
+    showResults(data, payload, studentInfo);
+    saveHistory(data, studentInfo, payload);
   } catch (err) {
     if (loader) loader.classList.remove('active');
     showToast('Risk analysis failed: ' + err.message, 'error');
@@ -356,14 +428,10 @@ function handleReset() {
   });
 }
 
-function showResults(data, payload) {
-  const studentInfo = {
-    name: document.getElementById('student_name').value || 'Unknown Student',
-    roll: document.getElementById('student_roll').value || '-',
-    branch: document.getElementById('student_branch').value || '-'
+function showResults(data, payload, restoredInfo = null) {
+  const studentInfo = restoredInfo || {
+    name: 'Unknown Student', roll: '-', branch: '-'
   };
-
-  saveHistory(data, studentInfo);
 
   const banner = document.getElementById('student-id-banner');
   if (banner) {
@@ -387,18 +455,20 @@ function showResults(data, payload) {
 
   // Set Theme
   const sec = document.getElementById('section-results');
-  if(data.riskLevel === 'Low') {
+  const level = data.riskLevel.toLowerCase();
+  
+  if(level === 'low') {
     sec.style.setProperty('--blue', 'var(--green)'); sec.style.setProperty('--blue-dim', 'var(--green-dim)');
-  } else if (data.riskLevel === 'Medium') {
+  } else if (level === 'high') {
     sec.style.setProperty('--blue', 'var(--amber)'); sec.style.setProperty('--blue-dim', 'var(--amber-dim)');
-  } else {
+  } else { // critical
     sec.style.setProperty('--blue', 'var(--red)'); sec.style.setProperty('--blue-dim', 'var(--red-dim)');
   }
 
   // Urgent Shake Text
   const uBan = document.getElementById('urgent-banner');
   if(uBan) {
-    if(data.riskLevel === 'High') {
+    if(level === 'critical') {
       uBan.classList.add('active');
     } else {
       uBan.classList.remove('active');
@@ -445,7 +515,7 @@ function showForm() {
 function animateGauge(pct) {
   const ARC = 289;
   const fill = document.getElementById('gauge-fill'), needle = document.getElementById('gauge-needle'), valEl = document.getElementById('gauge-value');
-  valEl.className = 'gauge-value ' + (pct < 40 ? 'gauge-value--low' : pct < 70 ? 'gauge-value--medium' : 'gauge-value--high');
+  valEl.className = 'gauge-value ' + (pct < 20 ? 'gauge-value--low' : pct <= 50 ? 'gauge-value--medium' : 'gauge-value--high');
   const d = 1800; const st = performance.now();
   function step(now) {
     const e = Math.min((now - st)/d, 1);
@@ -532,8 +602,9 @@ function renderSmartIntervention(level, st) {
       </div>
     </div>`;
 
-  if(level === 'Low') c.innerHTML = lowHTML;
-  else if(level === 'Medium') c.innerHTML = medHTML;
+  const lvl = level.toLowerCase();
+  if(lvl === 'low') c.innerHTML = lowHTML;
+  else if(lvl === 'high') c.innerHTML = medHTML;
   else c.innerHTML = highHTML;
 }
 
@@ -544,34 +615,36 @@ function renderFeatureBars(payload, totalPct) {
   const c = document.getElementById('feature-bars-container');
   if(!c) return;
   
-  // Create mock impact scores based on payload vs thresholds
+  // Use actual model features for impact visualization
   const impacts = [
-    { label: "CGPA", val: payload['cgpa']||0, threshold: 6.5, type: 'higher-better' },
-    { label: "Attendance", val: payload['attendance']||0, threshold: 0.75, type: 'higher-better' },
-    { label: "Backlogs", val: payload['backlogs']||0, threshold: 2, type: 'lower-better' },
-    { label: "Internal Marks", val: payload['internal_marks']||0, threshold: 50, type: 'higher-better' },
-    { label: "Fees Paid", val: payload['fees_paid']||0, threshold: 1, type: 'higher-better' },
+    { label: "Sem 1 Grade", val: payload['Curricular units 1st sem (grade)']||0, threshold: 10, type: 'higher-better', max: 20 },
+    { label: "Sem 2 Grade", val: payload['Curricular units 2nd sem (grade)']||0, threshold: 10, type: 'higher-better', max: 20 },
+    { label: "Sem 1 Pass Ratio", val: payload['1st_pass_ratio']||0, threshold: 0.6, type: 'higher-better', max: 1 },
+    { label: "Sem 2 Pass Ratio", val: payload['2nd_pass_ratio']||0, threshold: 0.6, type: 'higher-better', max: 1 },
+    { label: "Tuition Paid", val: payload['Tuition fees up to date']||0, threshold: 1, type: 'higher-better', max: 1 },
   ];
 
   let html = '';
   impacts.forEach(f => {
-    let rawImpact = 0;
+    // Calculate a percentage representing how good/bad the value is relative to threshold
+    let relativeScore = 0;
     if(f.type === 'higher-better') {
-      rawImpact = (f.val - f.threshold) / f.threshold * 50; 
+      relativeScore = (f.val / f.max) * 100;
     } else {
-      rawImpact = (f.threshold - f.val) * 20; 
+      relativeScore = (1 - (f.val / f.max)) * 100;
     }
-    // Cap impact mock
-    let pct = Math.min(Math.max(Math.abs(rawImpact), 5), 100);
-    const isDanger = rawImpact < 0; 
+    
+    // Impact mock: distance from threshold
+    const isDanger = f.val < f.threshold;
+    let impactPct = Math.min(Math.max(relativeScore, 5), 100);
 
     html += `
       <div class="fbar-row">
         <div class="fbar-lbl">${f.label}</div>
         <div class="fbar-track">
-          <div class="fbar-fill ${isDanger?'danger':'safe'}" style="width:${pct}%; float:${isDanger?'left':'right'};"></div>
+          <div class="fbar-fill ${isDanger?'danger':'safe'}" style="width:${impactPct}%; float:${isDanger?'left':'right'};"></div>
         </div>
-        <div class="fbar-val" style="color:${isDanger?'var(--red)':'var(--green)'};">${pct.toFixed(0)}%</div>
+        <div class="fbar-val" style="color:${isDanger?'var(--red)':'var(--green)'};">${impactPct.toFixed(0)}%</div>
       </div>`;
   });
   c.innerHTML = html;

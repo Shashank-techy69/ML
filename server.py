@@ -237,12 +237,12 @@ def predict():
         arr = np.array([values])
         prob = float(model.predict_proba(arr)[0][1])
 
-        if prob < 0.4:
+        if prob < 0.2:
             risk_level = "low"
-        elif prob < 0.7:
-            risk_level = "medium"
-        else:
+        elif prob <= 0.5:
             risk_level = "high"
+        else:
+            risk_level = "critical"
 
         return jsonify({
             "probability": round(prob, 4),

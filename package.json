@@ -1,0 +1,19 @@
+{
+  "name": "student-risk-monitor",
+  "version": "2.0.0",
+  "description": "AI-powered academic dropout risk assessment system",
+  "main": "server.py",
+  "scripts": {
+    "dev": "python server.py",
+    "start": "python server.py",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "machine-learning",
+    "flask",
+    "education",
+    "risk-assessment"
+  ],
+  "author": "Anmol Garg",
+  "license": "ISC"
+}
